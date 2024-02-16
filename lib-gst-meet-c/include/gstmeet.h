@@ -54,6 +54,7 @@ JitsiConference *gstmeet_connection_join_conference(struct Context *context,
 bool gstmeet_conference_connected(struct Context *context, JitsiConference *conference);
 
 bool gstmeet_conference_leave(struct Context *context, JitsiConference *conference);
+bool gstmeet_set_constraints(struct Context *context, JitsiConference *conference);
 
 bool gstmeet_conference_set_muted(struct Context *context,
                                   JitsiConference *conference,

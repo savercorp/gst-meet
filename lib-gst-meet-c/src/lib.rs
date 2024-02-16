@@ -13,7 +13,10 @@ use glib::{
   ffi::GMainContext,
   translate::{from_glib, from_glib_full, ToGlibPtr},
 };
+use std::collections::HashMap;
+use tracing::{debug, error, info, trace, warn};
 use lib_gst_meet::JitsiConferenceConfig;
+use colibri::{ColibriMessage, Constraints, VideoType};
 pub use lib_gst_meet::{init_tracing, Authentication, Connection, JitsiConference, MediaType};
 use tokio::runtime::Runtime;
 
@@ -28,6 +31,13 @@ pub struct ConferenceConfig {
   pub nick: *const c_char,
   pub region: *const c_char,
   pub video_codec: *const c_char,
+}
+
+struct VideoConstraints  {
+  lastN: u8,
+  selectedSources: Vec<String>,
+  onStageSources: Vec<String>,
+  defaultConstraints: Option<Constraints>,
 }
 
 #[repr(C)]
@@ -161,8 +171,8 @@ pub unsafe extern "C" fn gstmeet_connection_join_conference(
     start_bitrate: 800,
     stereo: false,
 
-    recv_video_scale_width: 1280,
-    recv_video_scale_height: 720,
+    recv_video_scale_width: 1920,
+    recv_video_scale_height: 1080,
 
     buffer_size: 200,
 
@@ -181,6 +191,45 @@ pub unsafe extern "C" fn gstmeet_connection_join_conference(
     .ok_raw_or_log()
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn gstmeet_set_constraints(
+  context: *mut Context,
+  conference: *mut JitsiConference,
+  source_name: *const c_char,
+) -> bool {
+  (*context)
+    .runtime
+    .block_on(Box::from_raw(conference).send_colibri_message(ColibriMessage::ReceiverVideoConstraints {
+      last_n: Some(1),
+      selected_endpoints: None,
+      on_stage_endpoints: None,
+      default_constraints: Some(Constraints {
+        max_height: Some(1080),
+        ideal_height: Some(1080)
+      }),
+      constraints: None,
+    }))
+    .map_err(|e| eprintln!("lib-gst-meet: {:?}", e))
+    .is_ok()
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn gstmeet_set_sender_constraints(
+  context: *mut Context,
+  conference: *mut JitsiConference,
+) -> bool {    
+  (*context)
+    .runtime
+    .block_on(Box::from_raw(conference).send_colibri_message(ColibriMessage::SenderVideoConstraints {      
+      video_constraints: Constraints {
+        max_height: Some(1080),
+        ideal_height: Some(1080)
+      }
+    }))
+    .map_err(|e| eprintln!("lib-gst-meet: {:?}", e))
+    .is_ok()
+}
 #[no_mangle]
 pub unsafe extern "C" fn gstmeet_conference_leave(
   context: *mut Context,

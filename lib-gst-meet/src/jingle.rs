@@ -669,12 +669,15 @@ impl JingleSession {
               .clone(),
           )
         })?;
+        let latency: u32 = 1024;
         debug!("jitterbuffer is for remote source: {:?}", source);
+        debug!("jitterbuffer is for remote latency: {:?}", latency);
         if source.media_type == MediaType::Video && source.participant_id.is_some() {
           debug!("enabling RTX for ssrc {}", ssrc);
           rtpjitterbuffer.set_property("do-retransmission", true);
           rtpjitterbuffer.set_property("drop-on-latency", true);
-          rtpjitterbuffer.set_property("latency", buffer_size);
+          rtpjitterbuffer.set_property("latency", latency);
+          
         }
         Ok::<_, anyhow::Error>(())
       };

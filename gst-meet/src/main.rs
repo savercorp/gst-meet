@@ -104,7 +104,7 @@ struct Opt {
 
   #[structopt(
     long,
-    default_value = "720",
+    default_value = "1080",
     help = "The maximum height we plan to send video at (used for stats only)."
   )]
   send_video_height: u16,
@@ -124,7 +124,7 @@ struct Opt {
 
   #[structopt(
     long,
-    default_value = "720",
+    default_value = "1080",
     help = "The height to scale received video to before passing it to the recv-pipeline. This will also be signalled as the maximum height that JVB should send video to us at."
   )]
   recv_video_scale_height: u16,
@@ -350,8 +350,8 @@ async fn main_inner() -> Result<()> {
         .map(|endpoints| endpoints.split(',').map(ToOwned::to_owned).collect()),
       on_stage_endpoints: None,
       default_constraints: Some(Constraints {
-        max_height: Some(opt.recv_video_scale_height.into()),
-        ideal_height: None,
+        max_height: Some(1080),
+        ideal_height: Some(1080)
       }),
       constraints: None,
     })
