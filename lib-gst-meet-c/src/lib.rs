@@ -33,12 +33,6 @@ pub struct ConferenceConfig {
   pub video_codec: *const c_char,
 }
 
-struct VideoConstraints  {
-  lastN: u8,
-  selectedSources: Vec<String>,
-  onStageSources: Vec<String>,
-  defaultConstraints: Option<Constraints>,
-}
 
 #[repr(C)]
 pub struct Participant {
@@ -90,16 +84,19 @@ pub unsafe extern "C" fn gstmeet_connection_new(
   context: *mut Context,
   websocket_url: *const c_char,
   xmpp_domain: *const c_char,
+  room_name: *const c_char,
   tls_insecure: bool,
 ) -> *mut Connection {
   let websocket_url = CStr::from_ptr(websocket_url);
   let xmpp_domain = CStr::from_ptr(xmpp_domain);
+  let room_name = CStr::from_ptr(room_name);
   (*context)
     .runtime
     .block_on(Connection::new(
       &websocket_url.to_string_lossy(),
       &xmpp_domain.to_string_lossy(),
       Authentication::Anonymous,
+      &room_name.to_string_lossy(),
       tls_insecure,
     ))
     .map(|(connection, background)| {
@@ -169,12 +166,12 @@ pub unsafe extern "C" fn gstmeet_connection_join_conference(
 
     // TODO
     start_bitrate: 800,
-    stereo: false,
+    stereo: true,
 
     recv_video_scale_width: 1920,
     recv_video_scale_height: 1080,
 
-    buffer_size: 200,
+    buffer_size: 1024,
 
     #[cfg(feature = "log-rtp")]
     log_rtp: false,
@@ -309,6 +306,48 @@ pub unsafe extern "C" fn gstmeet_conference_on_participant(
   let ctx = Arc::new(AtomicPtr::new(ctx));
   (*context).runtime.block_on(
     (*conference).on_participant(move |conference, participant| {
+      let ctx = ctx.clone();
+      Box::pin(async move {
+        let participant = Participant {
+          jid: participant
+            .jid
+            .map(
+              |jid| Ok::<_, anyhow::Error>(CString::new(jid.to_string())?.into_raw() as *const _),
+            )
+            .transpose()?
+            .unwrap_or_else(ptr::null),
+          muc_jid: CString::new(participant.muc_jid.to_string())?.into_raw() as *const _,
+          nick: participant
+            .nick
+            .map(|nick| Ok::<_, anyhow::Error>(CString::new(nick)?.into_raw() as *const _))
+            .transpose()?
+            .unwrap_or_else(ptr::null),
+        };
+        f(
+          Box::into_raw(Box::new(conference)),
+          participant,
+          ctx.load(Ordering::Relaxed),
+        );
+        Ok(())
+      })
+    }),
+  );
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn gstmeet_conference_on_participant_left(
+  context: *mut Context,
+  conference: *mut JitsiConference,
+  f: unsafe extern "C" fn(
+    *mut JitsiConference,
+    Participant,
+    *mut c_void,
+  ),
+  ctx: *mut c_void,
+) {
+  let ctx = Arc::new(AtomicPtr::new(ctx));
+  (*context).runtime.block_on(
+    (*conference).on_participant_left(move |conference, participant| {
       let ctx = ctx.clone();
       Box::pin(async move {
         let participant = Participant {

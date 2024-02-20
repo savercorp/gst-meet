@@ -131,7 +131,7 @@ struct Opt {
 
   #[structopt(
     long,
-    default_value = "200",
+    default_value = "1024",
     help = "The size of the jitter buffers in milliseconds. Larger values are more resilient to packet loss and jitter, smaller values give lower latency."
   )]
   buffer_size: u32,
