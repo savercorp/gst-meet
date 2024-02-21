@@ -503,6 +503,13 @@ impl JitsiConference {
 impl StanzaFilter for JitsiConference {
   #[tracing::instrument(level = "trace")]
   fn filter(&self, element: &xmpp_parsers::Element) -> bool {
+    if let Some(conference) = element.get_child("conference", "http://jitsi.org/protocol/focus") {
+        let room = conference.attr("room").unwrap();
+        let jid = room.parse::<BareJid>().ok().unwrap();
+        let ok = jid == self.config.muc;
+        return ok;
+    }
+
     element.attr("from") == Some(self.config.focus.to_string().as_str())
       && element.is("iq", ns::DEFAULT_NS)
       || element
