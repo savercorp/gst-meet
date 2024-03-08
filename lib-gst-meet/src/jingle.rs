@@ -149,13 +149,14 @@ pub(crate) struct JingleSession {
   pipeline: gstreamer::Pipeline,
   audio_sink_element: gstreamer::Element,
   video_sink_element: gstreamer::Element,
-  pub(crate) remote_ssrc_map: HashMap<u32, Source>,
+  pub(crate) remote_ssrc_map: HashMap<u32, Source>,  
   _ice_agent: nice::Agent,
   pub(crate) accept_iq_id: Option<String>,
   pub(crate) colibri_url: Option<String>,
   pub(crate) colibri_channel: Option<ColibriChannel>,
   pub(crate) stats_handler_task: Option<JoinHandle<()>>,
   pipeline_state_null_rx: oneshot::Receiver<()>,
+  pub(crate) source_names: Vec<Option<String>>,
 }
 
 impl fmt::Debug for JingleSession {
@@ -322,6 +323,7 @@ impl JingleSession {
           else {
             MediaType::Video
           },
+          source_name: ssrc.name.clone(),
         },
       );
     }
@@ -1477,6 +1479,7 @@ impl JingleSession {
       colibri_channel: None,
       stats_handler_task: None,
       pipeline_state_null_rx,
+      source_names: Vec::new(),
     })
   }
 
@@ -1491,7 +1494,8 @@ impl JingleSession {
             .owner
             .clone();
 
-          debug!("adding ssrc to remote_ssrc_map: {:?}", ssrc);
+          debug!("adding ssrc to remote_ssrc_map: {:?}", self.source_names);
+          self.source_names.push(ssrc.name.clone());
           self.remote_ssrc_map.insert(
             ssrc.id,
             Source {
@@ -1503,6 +1507,7 @@ impl JingleSession {
               else {
                 MediaType::Video
               },
+              source_name: ssrc.name.clone(),
             },
           );
         }

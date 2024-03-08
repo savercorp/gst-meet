@@ -12,6 +12,7 @@ generate_element!(
   attributes: [
     /// Maps to the ssrc-id parameter.
     id: Required<u32> = "ssrc",
+    name: Option<String> = "name",
   ],
   children: [
     /// List of attributes for this source.
@@ -34,6 +35,7 @@ impl Source {
       id,
       parameters: Vec::new(),
       info: None,
+      name: Some("".to_string()),
     }
   }
 }

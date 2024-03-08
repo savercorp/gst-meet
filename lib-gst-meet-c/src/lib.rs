@@ -31,6 +31,7 @@ pub struct ConferenceConfig {
   pub nick: *const c_char,
   pub region: *const c_char,
   pub video_codec: *const c_char,
+  pub stream_nick: *const c_char,
 }
 
 
@@ -177,6 +178,7 @@ pub unsafe extern "C" fn gstmeet_connection_join_conference(
     log_rtp: false,
     #[cfg(feature = "log-rtp")]
     log_rtcp: false,
+    stream_nick: CStr::from_ptr((*config).stream_nick).to_string_lossy().to_string(),
   };
   (*context)
     .runtime
