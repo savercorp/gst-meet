@@ -200,7 +200,7 @@ impl JingleSession {
 
   fn parse_rtp_description(
     description: &RtpDescription,
-    remote_ssrc_map: &mut HashMap<u32, Source>,
+    remote_ssrc_map: &mut HashMap<u32, Source>, source_names: &mut Vec<Option<String>>
   ) -> Result<Option<ParsedRtpDescription>> {
     let mut opus = None;
     let mut h264 = None;
@@ -310,8 +310,8 @@ impl JingleSession {
         .context("missing ssrc-info")?
         .owner
         .clone();
-
-      debug!("adding ssrc to remote_ssrc_map: {:?}", ssrc);
+      source_names.push(ssrc.name.clone());
+      debug!("adding ssrc to remote_ssrc_map 314: {:?}", ssrc);
       remote_ssrc_map.insert(
         ssrc.id,
         Source {
@@ -476,11 +476,12 @@ impl JingleSession {
     let mut video_hdrext_transport_cc = None;
 
     let mut remote_ssrc_map = HashMap::new();
+    let mut source_names = Vec::new();
 
     for content in &jingle.contents {
       if let Some(Description::Rtp(description)) = &content.description {
         if let Some(description) =
-          JingleSession::parse_rtp_description(description, &mut remote_ssrc_map)?
+          JingleSession::parse_rtp_description(description, &mut remote_ssrc_map, &mut source_names)?
         {
           codecs.extend(description.codecs);
           audio_hdrext_ssrc_audio_level =

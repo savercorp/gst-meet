@@ -117,7 +117,7 @@ struct Opt {
 
   #[structopt(
     long,
-    default_value = "1280",
+    default_value = "1920",
     help = "The width to scale received video to before passing it to the recv-pipeline."
   )]
   recv_video_scale_width: u16,
