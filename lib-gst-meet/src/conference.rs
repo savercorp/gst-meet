@@ -637,34 +637,30 @@ impl StanzaFilter for JitsiConference {
                         if let Some(Description::Rtp(description)) = &content.description {
                           for ssrc in &description.ssrcs {
                                                     
-                            if let Some((first, rest)) = ssrc.name.clone().unwrap().split_once('-') {                          
-                              debug!("Received Jingle source-add: {}", first);   
+                            if let Some((first, rest)) = ssrc.name.clone().unwrap().split_once('-') {     
                               if self.inner.lock().await.participants.contains_key(first) && !rest.contains("a") &&
                               !self.inner.lock().await.participants.get(first).clone().unwrap().nick.clone().is_none() &&                               
                               self.inner.lock().await.participants.get(first).clone().unwrap().nick.clone().unwrap() == self.config.stream_nick {
-                                debug!("Received Jingle source-add parti: {:?}", self.inner.lock().await.participants.get(first).clone().unwrap().nick);
-                                debug!("Received Jingle source-add parti: {}", self.config.stream_nick);
                                 let mut constraints = HashMap::new();
                                 let mut endpoints = Vec::new();
-                                endpoints.push(ssrc.name.clone().unwrap());                              
+                                endpoints.push(first.to_string());
                                 constraints.insert(
-                                  ssrc.name.clone().unwrap(),
+                                  first.to_string(),
                                   Constraints {
                                     max_height: Some(1080),
                                     ideal_height: Some(1080)
                                   },
                                 );
-                                debug!("Received Jingle source-add jingle_session constraints: {:?}", constraints);
                                 let colibri_url = jingle_session.colibri_url.clone().unwrap();
                                 let colibri_channel =
                                 ColibriChannel::new(&colibri_url, self.tls_insecure).await?;
                                 if let Err(e) = colibri_channel.send(ColibriMessage::ReceiverVideoConstraints {
-                                  last_n: Some(1),
+                                  last_n: Some(-1),
                                   selected_endpoints: Some(endpoints.to_owned()),
                                   on_stage_endpoints: Some(endpoints.to_owned()),
                                   default_constraints: Some(Constraints {
-                                    max_height: Some(1080),
-                                    ideal_height: Some(1080)
+                                    max_height: Some(180),
+                                    ideal_height: Some(180)
                                   }),
                                   constraints: Some(constraints),
                                 }).await {
@@ -1043,19 +1039,16 @@ impl StanzaFilter for JitsiConference {
                       .insert(from.resource.clone(), participant.clone())
                       .is_none()
                     {
-                      debug!("new participant 1081 jingle_session from.resource.clone(): {:?}", from.resource.clone());
-                      if let Some(jingle_session) = self.jingle_session.lock().await.as_mut() {                   
-                        debug!("new participant 1121 jingle_session from.resource.clone(): {:?}", from.resource.clone());                             
-                        if !participant.nick.clone().is_none() && participant.nick.clone().unwrap() == self.config.stream_nick  { 
-                          debug!("new participant 1086 jingle_session from.resource.clone(): {:?}", jingle_session.remote_ssrc_map);
-                          debug!("new participant 1087 jingle_session from.resource.clone(): {:?}", jingle_session.source_names);                            
+                      if let Some(jingle_session) = self.jingle_session.lock().await.as_mut() {                                              
+                        if !participant.nick.clone().is_none() && participant.nick.clone().unwrap() == self.config.stream_nick  {
+                          debug!("new participant 1135 jingle_session constraints: {:?}", participant.jid);                           
                           for source_name in &jingle_session.source_names {
                             if source_name.clone().unwrap().contains(&participant.muc_jid.resource.to_string()) && !source_name.clone().unwrap().contains(&"-a".to_string()){
                               let mut constraints = HashMap::new();
                               let mut endpoints = Vec::new();
-                              endpoints.push(source_name.clone().unwrap());                              
+                              endpoints.push(participant.muc_jid.resource.clone().to_string());
                               constraints.insert(
-                                source_name.clone().unwrap(),
+                                participant.muc_jid.resource.clone().to_string(),
                                 Constraints {
                                   max_height: Some(1080),
                                   ideal_height: Some(1080)
@@ -1066,12 +1059,12 @@ impl StanzaFilter for JitsiConference {
                               let colibri_channel =
                               ColibriChannel::new(&colibri_url, self.tls_insecure).await?;
                               if let Err(e) = colibri_channel.send(ColibriMessage::ReceiverVideoConstraints {
-                                last_n: Some(1),
+                                last_n: Some(-1),
                                 selected_endpoints: Some(endpoints.to_owned()),
                                 on_stage_endpoints: Some(endpoints.to_owned()),
                                 default_constraints: Some(Constraints {
-                                  max_height: Some(1080),
-                                  ideal_height: Some(1080)
+                                  max_height: Some(180),
+                                  ideal_height: Some(180)
                                 }),
                                 constraints: Some(constraints),
                               }).await {
