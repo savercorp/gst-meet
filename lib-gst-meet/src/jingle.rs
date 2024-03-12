@@ -928,46 +928,9 @@ impl JingleSession {
               MediaType::Audio => decoder
                 .static_pad("src")
                 .context("decoder has no src pad")?,
-              MediaType::Video => {
-                let videoscale = gstreamer::ElementFactory::make("videoscale").build()?;
-                pipeline
-                  .add(&videoscale)
-                  .context("failed to add videoscale to pipeline")?;
-                videoscale.sync_state_with_parent()?;
-                decoder
-                  .link(&videoscale)
-                  .context("failed to link decoder to videoscale")?;
-
-                let capsfilter = gstreamer::ElementFactory::make("capsfilter").build()?;
-                capsfilter.set_property_from_str(
-                  "caps",
-                  &format!(
-                    "video/x-raw, width={}, height={}",
-                    conference.config.recv_video_scale_width,
-                    conference.config.recv_video_scale_height
-                  ),
-                );
-                pipeline
-                  .add(&capsfilter)
-                  .context("failed to add capsfilter to pipeline")?;
-                capsfilter.sync_state_with_parent()?;
-                videoscale
-                  .link(&capsfilter)
-                  .context("failed to link videoscale to capsfilter")?;
-
-                let videoconvert = gstreamer::ElementFactory::make("videoconvert").build()?;
-                pipeline
-                  .add(&videoconvert)
-                  .context("failed to add videoconvert to pipeline")?;
-                videoconvert.sync_state_with_parent()?;
-                capsfilter
-                  .link(&videoconvert)
-                  .context("failed to link capsfilter to videoconvert")?;
-
-                videoconvert
-                  .static_pad("src")
-                  .context("videoconvert has no src pad")?
-              },
+              MediaType::Video => decoder
+                .static_pad("src")
+                .context("decoder has no src pad")?,
             };
 
             if let Some(participant_id) = source.participant_id {
