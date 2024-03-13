@@ -635,8 +635,7 @@ impl StanzaFilter for JitsiConference {
                     if let Some(jingle_session) = self.jingle_session.lock().await.as_mut() { 
                       for content in &jingle.contents {
                         if let Some(Description::Rtp(description)) = &content.description {
-                          for ssrc in &description.ssrcs {
-                                                    
+                          for ssrc in &description.ssrcs {   
                             if let Some((first, rest)) = ssrc.name.clone().unwrap().split_once('-') {     
                               if self.inner.lock().await.participants.contains_key(first) && !rest.contains("a") &&
                               !self.inner.lock().await.participants.get(first).clone().unwrap().nick.clone().is_none() &&                               
@@ -1041,46 +1040,36 @@ impl StanzaFilter for JitsiConference {
                     {
                       if let Some(jingle_session) = self.jingle_session.lock().await.as_mut() {                                              
                         if !participant.nick.clone().is_none() && participant.nick.clone().unwrap() == self.config.stream_nick  {
-                          debug!("new participant 1135 jingle_session constraints: {:?}", participant.jid);                           
-                          for source_name in &jingle_session.source_names {
-                            if source_name.clone().unwrap().contains(&participant.muc_jid.resource.to_string()) && !source_name.clone().unwrap().contains(&"-a".to_string()){
-                              let mut constraints = HashMap::new();
-                              let mut endpoints = Vec::new();
-                              endpoints.push(participant.muc_jid.resource.clone().to_string());
-                              constraints.insert(
-                                participant.muc_jid.resource.clone().to_string(),
-                                Constraints {
-                                  max_height: Some(1080),
-                                  ideal_height: Some(1080)
-                                },
-                              );
-                              debug!("new participant 1135 jingle_session constraints: {:?}", constraints);
-                              let colibri_url = jingle_session.colibri_url.clone().unwrap();
-                              let colibri_channel =
-                              ColibriChannel::new(&colibri_url, self.tls_insecure).await?;
-                              if let Err(e) = colibri_channel.send(ColibriMessage::ReceiverVideoConstraints {
-                                last_n: Some(-1),
-                                selected_endpoints: Some(endpoints.to_owned()),
-                                on_stage_endpoints: Some(endpoints.to_owned()),
-                                default_constraints: Some(Constraints {
-                                  max_height: Some(180),
-                                  ideal_height: Some(180)
-                                }),
-                                constraints: Some(constraints),
-                              }).await {
-                                warn!("failed to send ReceiverVideoConstraints: {:?}", e);
-                              }
-                             
-                            }
+                          let mut constraints = HashMap::new();
+                          let mut endpoints = Vec::new();
+                          endpoints.push(participant.muc_jid.resource.clone().to_string());
+                          constraints.insert(
+                            participant.muc_jid.resource.clone().to_string(),
+                            Constraints {
+                              max_height: Some(1080),
+                              ideal_height: Some(1080)
+                            },
+                          );
+                          debug!("new participant set constraints: {:?}", constraints);
+                          let colibri_url = jingle_session.colibri_url.clone().unwrap();
+                          let colibri_channel =
+                          ColibriChannel::new(&colibri_url, self.tls_insecure).await?;
+                          if let Err(e) = colibri_channel.send(ColibriMessage::ReceiverVideoConstraints {
+                            last_n: Some(-1),
+                            selected_endpoints: Some(endpoints.to_owned()),
+                            on_stage_endpoints: Some(endpoints.to_owned()),
+                            default_constraints: Some(Constraints {
+                              max_height: Some(180),
+                              ideal_height: Some(180)
+                            }),
+                            constraints: Some(constraints),
+                          }).await {
+                            warn!("failed to send ReceiverVideoConstraints: {:?}", e);
                           }
-                          
                         }
-                        // TODO check particiant nick is same as record nick-> get participant id, compare to source_name
-                        debug!("new participant  1157 jingle_session: {:?}", jingle_session.colibri_url.clone());
-                        debug!("new participant jingle_session: {:?}", self.config.stream_nick);
                         
                       }
-                      debug!("new participant 1161: {:?}", participant.muc_jid.resource);
+                      debug!("new participant: {:?}", participant.muc_jid.resource);
                       if let Some(f) = &self.inner.lock().await.on_participant.as_ref().cloned() {
                         debug!("calling on_participant with new participant");
                         if let Err(e) = f(self.clone(), participant.clone()).await {
