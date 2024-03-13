@@ -321,7 +321,7 @@ async fn main_inner() -> Result<()> {
     region,
     video_codec,
     extra_muc_features: vec![],
-    start_bitrate: start_bitrate.unwrap_or(800),
+    start_bitrate: start_bitrate.unwrap_or(6800),
     stereo: stereo.unwrap_or_default(),
     recv_video_scale_height,
     recv_video_scale_width,
