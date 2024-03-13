@@ -166,13 +166,13 @@ pub unsafe extern "C" fn gstmeet_connection_join_conference(
     extra_muc_features: vec![],
 
     // TODO
-    start_bitrate: 6800,
+    start_bitrate: 800,
     stereo: true,
 
     recv_video_scale_width: 1920,
     recv_video_scale_height: 1080,
 
-    buffer_size: 1024,
+    buffer_size: 200,
 
     #[cfg(feature = "log-rtp")]
     log_rtp: false,
