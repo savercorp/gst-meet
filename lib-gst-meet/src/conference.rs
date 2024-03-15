@@ -655,11 +655,11 @@ impl StanzaFilter for JitsiConference {
                                 ColibriChannel::new(&colibri_url, self.tls_insecure).await?;
                                 if let Err(e) = colibri_channel.send(ColibriMessage::ReceiverVideoConstraints {
                                   last_n: Some(-1),
-                                  selected_endpoints: Some(endpoints.to_owned()),
-                                  on_stage_endpoints: Some(endpoints.to_owned()),
+                                  selected_endpoints: None,
+                                  on_stage_endpoints: None,
                                   default_constraints: Some(Constraints {
-                                    max_height: Some(180),
-                                    ideal_height: Some(180)
+                                    max_height: Some(1080),
+                                    ideal_height: Some(1080)
                                   }),
                                   constraints: Some(constraints),
                                 }).await {
@@ -1056,11 +1056,11 @@ impl StanzaFilter for JitsiConference {
                           ColibriChannel::new(&colibri_url, self.tls_insecure).await?;
                           if let Err(e) = colibri_channel.send(ColibriMessage::ReceiverVideoConstraints {
                             last_n: Some(-1),
-                            selected_endpoints: Some(endpoints.to_owned()),
-                            on_stage_endpoints: Some(endpoints.to_owned()),
+                            selected_endpoints: None,
+                            on_stage_endpoints: None,
                             default_constraints: Some(Constraints {
-                              max_height: Some(180),
-                              ideal_height: Some(180)
+                              max_height: Some(1080),
+                              ideal_height: Some(1080)
                             }),
                             constraints: Some(constraints),
                           }).await {
