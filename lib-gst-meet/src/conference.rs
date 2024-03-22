@@ -97,6 +97,7 @@ pub struct JitsiConferenceConfig {
   #[cfg(feature = "log-rtp")]
   pub log_rtcp: bool,
   pub stream_nick: String, //TODO
+  pub time: String, //TODO
 }
 
 #[derive(Clone)]
@@ -613,8 +614,7 @@ impl StanzaFilter for JitsiConference {
                       // Acknowledge the IQ
                       let result_iq = Iq::empty_result(Jid::Full(from_jid.clone()), iq.id.clone())
                         .with_from(Jid::Full(self.jid.clone()));
-                      self.xmpp_tx.send(result_iq.into()).await?;
-
+                      self.xmpp_tx.send(result_iq.into()).await?;                     
                       *self.jingle_session.lock().await =
                         Some(JingleSession::initiate(self, jingle.to_owned()).await?);
                       self

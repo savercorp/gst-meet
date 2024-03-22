@@ -331,6 +331,7 @@ async fn main_inner() -> Result<()> {
     #[cfg(feature = "log-rtp")]
     log_rtcp,
     stream_nick: "".to_string(),
+    time: "".to_string(),
   };
 
   let main_loop = glib::MainLoop::new(None, false);

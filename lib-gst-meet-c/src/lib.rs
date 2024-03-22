@@ -32,6 +32,7 @@ pub struct ConferenceConfig {
   pub region: *const c_char,
   pub video_codec: *const c_char,
   pub stream_nick: *const c_char,
+  pub time: *const c_char,
 }
 
 
@@ -179,7 +180,9 @@ pub unsafe extern "C" fn gstmeet_connection_join_conference(
     #[cfg(feature = "log-rtp")]
     log_rtcp: false,
     stream_nick: CStr::from_ptr((*config).stream_nick).to_string_lossy().to_string(),
+    time: CStr::from_ptr((*config).time).to_string_lossy().to_string(),
   };
+  
   (*context)
     .runtime
     .block_on(JitsiConference::join(

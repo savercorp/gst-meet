@@ -178,6 +178,8 @@ impl JingleSession {
     self.video_sink_element.clone()
   }
 
+ 
+
   pub(crate) fn pause_all_sinks(&self) {
     if let Some(rtpbin) = self.pipeline.by_name("rtpbin") {
       rtpbin.foreach_src_pad(|_, pad| {
@@ -312,6 +314,7 @@ impl JingleSession {
         .clone();
       source_names.push(ssrc.name.clone());
       debug!("adding ssrc to remote_ssrc_map 314: {:?}", ssrc);
+      
       remote_ssrc_map.insert(
         ssrc.id,
         Source {
@@ -459,7 +462,13 @@ impl JingleSession {
 
     Ok((ice_agent, ice_stream_id, ice_component_id))
   }
-
+  pub(crate) fn remove_bin(&self, name:String) -> Result<()> {
+    if let Some(checkbin) = self.pipeline.by_name(&name.as_str()) {
+      //if (gst_bin_remove(GST_BIN(self.video_source_room_pipeline), element)) { 
+      debug!("adding ssrc to remote_ssrc_map 317: {:?}", checkbin);
+    }
+    Ok(())
+  }
   pub(crate) async fn initiate(conference: &JitsiConference, jingle: Jingle) -> Result<Self> {
     let initiator = jingle
       .initiator
@@ -650,9 +659,11 @@ impl JingleSession {
     let handle = Handle::current();
     let jingle_session = conference.jingle_session.clone();
     let buffer_size = conference.config.buffer_size;
+    
     rtpbin.connect("new-jitterbuffer", false, move |values| {
       let handle = handle.clone();
       let jingle_session = jingle_session.clone();
+      
       let f = move || {
         let rtpjitterbuffer: gstreamer::Element = values[1].get()?;
         let session: u32 = values[2].get()?;
@@ -661,7 +672,7 @@ impl JingleSession {
           "new jitterbuffer created for session {} ssrc {}",
           session, ssrc
         );
-
+         
         let source = handle.block_on(async move {
           Ok::<_, anyhow::Error>(
             jingle_session
@@ -675,6 +686,8 @@ impl JingleSession {
               .clone(),
           )
         })?;
+        let name =format!("participant_{}", source.participant_id.clone().unwrap());        
+        
         let latency: u32 = 2048;
         debug!("jitterbuffer is for remote source: {:?}", source);
         debug!("jitterbuffer is for remote latency: {:?}", latency);
@@ -1007,7 +1020,7 @@ impl JingleSession {
                 );
               }
               else if let Some(participant_bin) =
-                pipeline.by_name(&format!("participant_{}", participant_id))
+                pipeline.by_name(&format!("participant_{}_{}", conference.config.time, participant_id))
               {
                 let sink_pad_name = match source.media_type {
                   MediaType::Audio => "audio",
