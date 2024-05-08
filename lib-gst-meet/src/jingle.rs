@@ -555,6 +555,8 @@ impl JingleSession {
     let rtpbin = gstreamer::ElementFactory::make("rtpbin")
       .name("rtpbin")
       .property_from_str("rtp-profile", "savpf")
+      .property_from_str("buffer-mode", "slave")    
+      .property("do-retransmission", true)      
       .property("autoremove", true)
       .property("do-lost", true)
       .property("do-sync-event", true)
@@ -685,17 +687,19 @@ impl JingleSession {
               .context(format!("unknown ssrc: {}", ssrc))?
               .clone(),
           )
-        })?;
-        let name =format!("participant_{}", source.participant_id.clone().unwrap());        
+        })?;        
         
-        let latency: u32 = 2048;
+        let latency: u32 = 1000;
         debug!("jitterbuffer is for remote source: {:?}", source);
         debug!("jitterbuffer is for remote latency: {:?}", latency);
         if source.media_type == MediaType::Video && source.participant_id.is_some() {
-          debug!("enabling RTX for ssrc {}", ssrc);
+          debug!("enabling RTX for ssrc {}", ssrc);          
           rtpjitterbuffer.set_property("do-retransmission", true);
           rtpjitterbuffer.set_property("drop-on-latency", true);
           rtpjitterbuffer.set_property("latency", latency);
+          rtpjitterbuffer.set_property_from_str("mode", "slave")
+          // rtpjitterbuffer.set_property("max-ts-offset-adjustment", 100000000 as u64);
+          // rtpjitterbuffer.set_property("ts-offset", 500000000  as i64);                    
           
         }
         Ok::<_, anyhow::Error>(())
@@ -999,8 +1003,8 @@ impl JingleSession {
                   .context("no suitable sink pad provided by sink element in recv pipeline")?;
                 let ghost_pad = GhostPad::with_target(
                   Some(&format!(
-                    "participant_{}_{:?}",
-                    participant_id, source.media_type
+                    "participant_{}_{}_{:?}",
+                    conference.config.time, participant_id,  source.media_type
                   )),
                   &sink_pad,
                 )?;
@@ -1573,3 +1577,4 @@ fn participant_id_for_owner(owner: String) -> Result<Option<String>> {
     ))
   }
 }
+
